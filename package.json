@@ -1,0 +1,76 @@
+{
+  "name": "team-shuffle",
+  "productName": "TeamShuffle",
+  "version": "1.0.0",
+  "description": "성비와 연령 비율을 맞춰 팀을 나누는 랜덤 팀 편성 프로그램",
+  "author": "TeamShuffle contributors",
+  "license": "MIT",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node test/balancer.test.js",
+    "dist:win": "electron-builder --win --publish never",
+    "dist:mac": "electron-builder --mac --publish never"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "io.github.teamshuffle",
+    "productName": "TeamShuffle",
+    "copyright": "Copyright © 2026 TeamShuffle contributors",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TeamShuffle",
+      "artifactName": "TeamShuffle-Setup-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.png",
+      "category": "public.app-category.productivity",
+      "identity": "-",
+      "hardenedRuntime": false
+    },
+    "dmg": {
+      "artifactName": "TeamShuffle-${version}-mac-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "dir"
+      ]
+    }
+  }
+}

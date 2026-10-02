@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'">
+<title>팀 랜덤 추첨기</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i><i></i></span>
+    <div>
+      <h1 id="appTitle">팀 랜덤 추첨기</h1>
+      <p class="brand-sub">성비와 연령을 맞춰 팀을 나눕니다</p>
+    </div>
+  </div>
+  <nav class="tabs" aria-label="화면">
+    <button type="button" class="tab-btn is-active" data-action="tab" data-tab="draw">팀 나누기</button>
+    <button type="button" class="tab-btn" data-action="tab" data-tab="roster">명단</button>
+    <button type="button" class="tab-btn" data-action="tab" data-tab="history">이력</button>
+    <button type="button" class="tab-btn" data-action="tab" data-tab="pairs">만남 현황</button>
+    <button type="button" class="tab-btn" data-action="tab" data-tab="settings">설정</button>
+  </nav>
+</header>
+
+<main>
+  <!-- 팀 나누기 -->
+  <section class="view is-active" id="view-draw">
+    <div class="draw-layout">
+      <aside class="setup">
+        <div class="panel">
+          <div class="panel-head">
+            <h2>출석</h2>
+            <p class="count-line" id="attendanceCount"></p>
+          </div>
+          <div class="tally" id="attendanceTally"></div>
+          <div class="attend-tools">
+            <input type="search" id="attendSearch" class="field" placeholder="이름 검색" aria-label="이름 검색">
+            <div class="seg" id="attendFilter" role="group" aria-label="보기"></div>
+          </div>
+          <div class="attend-bulk">
+            <button type="button" class="link-btn" data-action="mark-all" data-present="1">보이는 사람 모두 출석</button>
+            <button type="button" class="link-btn" data-action="mark-all" data-present="0">모두 결석</button>
+          </div>
+          <div class="chips" id="attendList"></div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h2>함께 / 따로</h2>
+          </div>
+          <p class="hint">꼭 같은 팀이어야 하거나, 꼭 다른 팀이어야 하는 두 사람을 지정합니다. 결석한 사람의 규칙은 그날 적용되지 않습니다.</p>
+          <div class="rule-form">
+            <select id="ruleA" class="field" aria-label="첫 번째 사람"></select>
+            <select id="ruleB" class="field" aria-label="두 번째 사람"></select>
+            <div class="rule-buttons">
+              <button type="button" class="btn btn-quiet" data-action="add-rule" data-kind="pairs">함께</button>
+              <button type="button" class="btn btn-quiet" data-action="add-rule" data-kind="separates">따로</button>
+            </div>
+          </div>
+          <div id="ruleList"></div>
+        </div>
+      </aside>
+
+      <section class="board" aria-label="팀 편성 결과">
+        <div class="board-controls">
+          <div class="stepper" role="group" aria-label="팀 수">
+            <span class="stepper-label">팀 수</span>
+            <button type="button" class="step" data-action="team-step" data-step="-1" aria-label="팀 하나 줄이기">−</button>
+            <output id="teamCountOut" class="step-value">4</output>
+            <button type="button" class="step" data-action="team-step" data-step="1" aria-label="팀 하나 늘리기">+</button>
+            <span class="per-team" id="perTeam"></span>
+          </div>
+          <button type="button" class="btn btn-primary" data-action="shuffle" id="shuffleBtn">팀 나누기</button>
+        </div>
+
+        <div id="boardBody"></div>
+      </section>
+    </div>
+  </section>
+
+  <!-- 명단 -->
+  <section class="view" id="view-roster">
+    <div class="roster-layout">
+      <div class="panel">
+        <div class="panel-head"><h2>한 명 추가</h2></div>
+        <form id="addForm" class="add-form" autocomplete="off">
+          <label class="lbl">이름<input type="text" id="addName" class="field" maxlength="30" required></label>
+          <fieldset class="radio-row">
+            <legend>성별</legend>
+            <label><input type="radio" name="addGender" value="m" checked> 남</label>
+            <label><input type="radio" name="addGender" value="f"> 여</label>
+          </fieldset>
+          <fieldset class="radio-row">
+            <legend>구분</legend>
+            <label><input type="radio" name="addGroup" value="a" checked> <span class="label-a">장년</span></label>
+            <label><input type="radio" name="addGroup" value="b"> <span class="label-b">청년</span></label>
+          </fieldset>
+          <button type="submit" class="btn btn-primary">추가</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>여러 명 한꺼번에 추가</h2></div>
+        <p class="hint" id="bulkHint"></p>
+        <textarea id="bulkText" class="field bulk" rows="8" spellcheck="false"></textarea>
+        <div class="row-end">
+          <button type="button" class="btn btn-quiet" data-action="bulk-add">목록 추가</button>
+        </div>
+      </div>
+
+      <div class="panel roster-list-panel">
+        <div class="panel-head">
+          <h2>전체 명단</h2>
+          <p class="count-line" id="rosterCount"></p>
+        </div>
+        <div class="roster-filter"><input type="search" class="field" id="rosterSearch" placeholder="이름 검색" aria-label="명단 검색"></div>
+        <div id="rosterList"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 이력 -->
+  <section class="view" id="view-history">
+    <div class="narrow">
+      <div class="panel-head page-head">
+        <h2>확정한 팀 편성</h2>
+        <p class="count-line" id="historyCount"></p>
+      </div>
+      <p class="hint">여기 저장된 편성이 다음 추첨에 반영되어, 같은 팀이었던 사람들이 되도록 다른 팀으로 갑니다. 잘못 확정한 기록은 지우면 됩니다.</p>
+      <div id="historyList"></div>
+    </div>
+  </section>
+
+  <!-- 만남 현황 -->
+  <section class="view" id="view-pairs">
+    <div class="narrow">
+      <div class="panel-head page-head"><h2>누가 누구와 같은 팀이었나</h2></div>
+      <p class="hint">확정한 편성을 기준으로 셉니다.</p>
+      <div class="pair-pick">
+        <label class="lbl">사람 선택<select id="pairPerson" class="field"></select></label>
+      </div>
+      <div id="pairDetail"></div>
+      <div class="panel-head page-head sub-head"><h2>가장 자주 같은 팀이었던 사이</h2></div>
+      <div id="topPairs"></div>
+    </div>
+  </section>
+
+  <!-- 설정 -->
+  <section class="view" id="view-settings">
+    <div class="narrow">
+      <div class="panel">
+        <div class="panel-head"><h2>이름 바꾸기</h2></div>
+        <form id="settingsForm" class="settings-form" autocomplete="off">
+          <label class="lbl">모임 이름 (위쪽 제목)<input type="text" id="setTitle" class="field" maxlength="40"></label>
+          <div class="two-col">
+            <label class="lbl">첫째 구분<input type="text" id="setLabelA" class="field" maxlength="10"></label>
+            <label class="lbl">둘째 구분<input type="text" id="setLabelB" class="field" maxlength="10"></label>
+          </div>
+          <p class="hint">구분은 장년·청년, 1부·2부, 신입·기존처럼 두 무리로 나뉘는 기준이면 무엇이든 됩니다.</p>
+          <label class="check"><input type="checkbox" id="setUseHistory"> 추첨할 때 이전 편성을 반영해 사람들을 고루 섞기</label>
+          <div class="row-end"><button type="submit" class="btn btn-primary">설정 저장</button></div>
+        </form>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h2>백업</h2></div>
+        <p class="hint">명단, 규칙, 이력을 파일 하나로 저장하거나 불러옵니다. 다른 컴퓨터로 옮길 때도 이 파일을 쓰면 됩니다.</p>
+        <div class="row-start">
+          <button type="button" class="btn btn-quiet" data-action="export-backup">백업 파일 저장</button>
+          <label class="btn btn-quiet file-btn">백업 파일 불러오기<input type="file" id="importFile" accept=".json,application/json"></label>
+          <button type="button" class="btn btn-quiet" data-action="export-csv">명단 CSV 저장</button>
+        </div>
+      </div>
+
+      <div class="panel danger-zone">
+        <div class="panel-head"><h2>초기화</h2></div>
+        <p class="hint">명단, 규칙, 이력을 모두 지웁니다. 되돌릴 수 없으니 먼저 백업 파일을 저장해 두세요.</p>
+        <div class="row-start"><button type="button" class="btn btn-danger" data-action="reset-all">모든 데이터 지우기</button></div>
+      </div>
+      <p class="about">TeamShuffle 1.0. 모든 데이터는 이 컴퓨터에만 저장됩니다.</p>
+    </div>
+  </section>
+</main>
+
+<dialog id="modal" class="modal">
+  <form method="dialog" class="modal-inner">
+    <h3 id="modalTitle"></h3>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-quiet" id="modalCancel">취소</button>
+      <button type="button" class="btn btn-primary" id="modalOk">확인</button>
+    </div>
+  </form>
+</dialog>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<script src="balancer.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
