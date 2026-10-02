@@ -1,0 +1,76 @@
+name: Build installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Test team balancing
+        run: npm test
+
+      - name: Build Windows installer
+        if: runner.os == 'Windows'
+        run: npx electron-builder --win --publish never
+
+      - name: Build macOS disk images
+        if: runner.os == 'macOS'
+        run: npx electron-builder --mac --publish never
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: installers-${{ runner.os }}
+          path: |
+            dist/*.exe
+            dist/*.dmg
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read version
+        id: version
+        run: echo "tag=v$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: true
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: TeamShuffle ${{ steps.version.outputs.tag }}
+          files: artifacts/*
+          body: |
+            ## 내려받기
+            - Windows: `TeamShuffle-Setup-*.exe`
+            - Mac (M1/M2/M3/M4 등 Apple 칩): `TeamShuffle-*-mac-arm64.dmg`
+            - Mac (인텔 칩): `TeamShuffle-*-mac-x64.dmg`
+
+            설치 방법과 처음 실행할 때 나오는 보안 경고 해결 방법은 README를 보세요.
